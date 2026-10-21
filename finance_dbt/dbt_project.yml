@@ -37,3 +37,6 @@ models:
       +materialized: view
     marts:
       +materialized: table
+
+flags:
+  manage_state: false   # don't use the dbt State cloud service (needs a dbt account, usage-based)      

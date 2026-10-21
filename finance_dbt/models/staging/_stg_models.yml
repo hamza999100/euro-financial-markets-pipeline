@@ -1,0 +1,93 @@
+version: 2
+
+models:
+  - name: stg_ecb_fx
+    description: "Daily ECB euro reference rates: 1 EUR = eur_fx_rate units of currency_code."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [currency_code, rate_date]
+    columns:
+      - name: currency_code
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["USD", "GBP", "CHF", "JPY", "CNY"]
+      - name: rate_date
+        data_tests:
+          - not_null
+      - name: eur_fx_rate
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+
+  - name: stg_ecb_policy_rates
+    description: "ECB key interest rates; one row per date on which a rate changed."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [rate_type, effective_date]
+    columns:
+      - name: effective_date
+        data_tests:
+          - not_null
+      - name: rate_pct
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: -1
+                max_value: 10
+
+  - name: stg_ecb_inflation
+    description: "Monthly HICP inflation (annual rate of change, %) for Germany (DE) and the euro area (U2)."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [country_code, month_start_date]
+    columns:
+      - name: country_code
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["DE", "U2"]
+      - name: month_start_date
+        data_tests:
+          - not_null
+      - name: inflation_yoy_pct
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: -5
+                max_value: 15
+
+  - name: stg_bbk_yields
+    description: "Daily yields (%) of the current 2-year and 10-year German federal securities."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [maturity_years, yield_date]
+    columns:
+      - name: maturity_years
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [2, 10]
+                quote: false
+      - name: yield_date
+        data_tests:
+          - not_null
+      - name: yield_pct
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: -2
+                max_value: 10
