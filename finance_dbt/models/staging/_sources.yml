@@ -5,11 +5,12 @@ sources:
     database: FINANCE_DB
     schema: RAW
     description: "Untouched API data loaded by ingest/load_raw.py. All values are stored as text."
-    loaded_at_field: LOADED_AT
-    freshness:
-      # FX and yields are published on business days only, so allow for weekends
-      warn_after: {count: 2, period: day}
-      error_after: {count: 4, period: day}
+    config:
+      loaded_at_field: LOADED_AT
+      freshness:
+        # FX and yields are published on business days only, so allow for weekends
+        warn_after: {count: 2, period: day}
+        error_after: {count: 4, period: day}
     tables:
       - name: raw_ecb_observations
         identifier: RAW_ECB_OBSERVATIONS

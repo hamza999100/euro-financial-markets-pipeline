@@ -1,0 +1,11 @@
+# Local runs: docker compose run --rm pipeline
+services:
+  pipeline:
+    build: .
+    image: euro-financial-markets-pipeline:latest
+    env_file: .env                         # Snowflake account, user, role, ... (never baked into the image)
+    environment:
+      SNOWFLAKE_PRIVATE_KEY_PATH: /keys/rsa_key.p8   # path INSIDE the container (overrides the Windows path from .env)
+      DBT_TARGET: dev
+    volumes:
+      - ${USERPROFILE}/.snowflake_keys:/keys:ro      # your key folder, mounted read-only into the container
