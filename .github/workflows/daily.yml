@@ -1,0 +1,46 @@
+name: Daily pipeline - load + dbt build into PROD
+
+on:
+  schedule:
+    - cron: "30 16 * * 1-5"   # Mon-Fri 16:30 UTC, after the ECB's ~16:00 CET publication
+  workflow_dispatch:          # manual "Run workflow" button
+
+concurrency:
+  group: daily-pipeline
+  cancel-in-progress: false
+
+jobs:
+  load-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+      SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+      SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v5
+
+      - name: Write the Snowflake private key to a temporary file
+        env:
+          KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/keys"
+          printf '%s\n' "$KEY" > "$RUNNER_TEMP/keys/rsa_key.p8"
+          chmod 600 "$RUNNER_TEMP/keys/rsa_key.p8"
+
+      - name: Build the Docker image
+        run: docker build -t pipeline:prod .
+
+      - name: Load new API data, check freshness, dbt build into DBT_PROD
+        run: |
+          docker run --rm \
+            -e SNOWFLAKE_ACCOUNT -e SNOWFLAKE_USER -e SNOWFLAKE_ROLE \
+            -e SNOWFLAKE_WAREHOUSE -e SNOWFLAKE_DATABASE \
+            -e SNOWFLAKE_PRIVATE_KEY_PATH=/keys/rsa_key.p8 \
+            -v "$RUNNER_TEMP/keys:/keys:ro" \
+            pipeline:prod \
+            sh -c "python ingest/load_raw.py && cd finance_dbt && dbt source freshness && dbt build --target prod"
