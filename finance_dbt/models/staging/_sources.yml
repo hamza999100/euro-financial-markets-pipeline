@@ -1,0 +1,37 @@
+version: 2
+
+sources:
+  - name: raw
+    database: FINANCE_DB
+    schema: RAW
+    description: "Untouched API data loaded by ingest/load_raw.py. All values are stored as text."
+    loaded_at_field: LOADED_AT
+    freshness:
+      # FX and yields are published on business days only, so allow for weekends
+      warn_after: {count: 2, period: day}
+      error_after: {count: 4, period: day}
+    tables:
+      - name: raw_ecb_observations
+        identifier: RAW_ECB_OBSERVATIONS
+        description: "ECB Data Portal: FX reference rates (EXR), deposit facility rate (FM), HICP inflation (HICP). Source: ECB."
+        columns:
+          - name: SERIES_KEY
+            description: "Full SDMX series key incl. dataflow, e.g. EXR.D.USD.EUR.SP00.A"
+          - name: PERIOD
+            description: "Observation period as text: YYYY-MM-DD (daily) or YYYY-MM (monthly)"
+          - name: OBS_VALUE
+            description: "Observation value as text"
+          - name: LOADED_AT
+            description: "UTC timestamp of the loader run that inserted the row"
+      - name: raw_bbk_observations
+        identifier: RAW_BBK_OBSERVATIONS
+        description: "Deutsche Bundesbank: daily yields of current 2y and 10y federal securities (BBSSY). © Deutsche Bundesbank."
+        columns:
+          - name: SERIES_KEY
+            description: "Bundesbank series key, e.g. BBSSY.D.REN.EUR.A630.000000WT1010.A"
+          - name: PERIOD
+            description: "Observation date as text (YYYY-MM-DD)"
+          - name: OBS_VALUE
+            description: "Yield in percent, as text"
+          - name: LOADED_AT
+            description: "UTC timestamp of the loader run that inserted the row"
