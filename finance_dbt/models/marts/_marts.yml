@@ -41,3 +41,32 @@ models:
       - name: eur_fx_rate
         data_tests:
           - not_null
+
+  - name: mart_yield_curve
+    description: "Daily German yield curve: 2y and 10y Bund yields, 10y-2y spread (pp), inversion flag, ECB deposit rate."
+    columns:
+      - name: yield_date
+        data_tests:
+          - unique
+          - not_null
+      - name: spread_10y_2y_pp
+        data_tests:
+          - not_null
+
+  - name: mart_real_interest_rate
+    description: "Monthly real interest rate = ECB deposit rate at month-end minus HICP inflation (Germany and euro area)."
+    columns:
+      - name: month_start_date
+        data_tests:
+          - unique
+          - not_null
+      - name: real_rate_de_pct
+        data_tests:
+          - not_null
+
+  - name: mart_fx_monthly
+    description: "Monthly average, min, max and volatility of EUR exchange rates per currency."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [currency_code, month_start_date]
